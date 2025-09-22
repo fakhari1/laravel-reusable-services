@@ -1,17 +1,17 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Product;
+namespace Modules\Warehouse\Http\Controllers\Api\Product;
 
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Models\Product;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Models\Product;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Delete(
  *     path="/api/products/{id}/delete",
  *     operationId="deleteProduct",
- *     tags={"Products"},
+ *     tags={"Warehouse > Products"},
  *     summary="Delete existing product",
  *     description="Deletes a record and returns no content",
  *     @OA\Parameter(
@@ -42,6 +42,11 @@ class DestroyProduct extends BaseCrudHandler
      */
     public function execute(array $attributes = [])
     {
-        return Responder::success(Product::findOrFail($attributes['id'])->delete());
+//        return Responder::success(Product::findOrFail($attributes['id'])->delete());
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

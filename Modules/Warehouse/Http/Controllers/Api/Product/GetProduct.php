@@ -1,20 +1,20 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Product;
+namespace Modules\Warehouse\Http\Controllers\Api\Product;
 
-use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\Product\ProductResource;
-use Modules\Modules\Warehouse\Models\Product;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
 use Modules\Warehouse\Http\Resources\Warehouse\WarehouseDocumentResource;
+use Modules\Warehouse\Http\Resources\WarehouseProduct\WarehouseProductResource;
+use Modules\Warehouse\Models\Product;
+use Modules\Warehouse\Models\WarehouseProduct;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Get(
  *     path="/api/products/{id}/get",
  *     operationId="getProductById",
- *     tags={"Products"},
+ *     tags={"Warehouse > Products"},
  *     summary="Get product information",
  *     description="Returns product data",
  *     @OA\Parameter(
@@ -26,8 +26,7 @@ use OpenApi\Annotations as OA;
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(ref="#/components/schemas/Product")
+ *         description="Successful operation"
  *     ),
  *     @OA\Response(
  *         response=403,
@@ -46,10 +45,15 @@ class GetProduct extends BaseCrudHandler
      */
     public function handle(array $attributes = [])
     {
-        $product = Product::findOrFail($attributes['id']);
+        $product = WarehouseProduct::where('product_id', $attributes['id'])->first();
 
         return Responder::success([
-            'product' => new ProductResource($product)
+            'product' => new WarehouseProductResource($product)
         ]);
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

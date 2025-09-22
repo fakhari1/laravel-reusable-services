@@ -1,18 +1,18 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Document;
+namespace Modules\Warehouse\Http\Controllers\Api\Document;
 
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\WarehouseDocument\WarehouseDocumentCollection;
-use Modules\Modules\Warehouse\Models\WarehouseDocument;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\WarehouseDocument\WarehouseDocumentCollection;
+use Modules\Warehouse\Models\WarehouseDocument;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Get(
  *     path="/api/warehouses/documents/all",
  *     operationId="getWarehouseDocumentsList",
- *     tags={"WarehouseDocuments"},
+ *     tags={"Warehouse > Documents"},
  *     summary="Get list of warehouse documents",
  *     description="Returns list of warehouse documents for the tenant",
  *     @OA\Parameter(
@@ -61,23 +61,39 @@ class GetAllWarehouseDocumentsList extends BaseCrudHandler
     {
         $tenantId = $this->tenant?->id;
 
-        $query = WarehouseDocument::forTenant($tenantId)->with(['staff', 'warehouse', 'documentable']);
+        $query = WarehouseDocument::ForTenant($tenantId)->with(['staff', 'warehouse', 'documentable', 'products']);
 
+        if (isset($attributes['type'])) {
+            $query->where('type', $attributes['type']);
+        }
+
+        if (isset($attributes['started_at'])) {
+            $query->where('created_at', '>=', $attributes['started_at']);
+        }
+
+        if (isset($attributes['finished_at'])) {
+            $query->where('created_at', '<=', $attributes['finished_at']);
+        }
 
         if ($this->shouldPaginate()) {
             $paginationParams = $this->getPaginationParams();
 
-            $warehouses = $query->paginate(
+            $warehouseDocuments = $query->paginate(
                 $paginationParams['per_page'],
                 ['*'],
                 'page',
                 $paginationParams['page']
             );
         } else {
-            $warehouses = $query->get();
+            $warehouseDocuments = $query->orderBy('created_at', 'desc')->get();
         }
 
 
-        return Responder::success(new WarehouseDocumentCollection($warehouses));
+        return Responder::success(new WarehouseDocumentCollection($warehouseDocuments));
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

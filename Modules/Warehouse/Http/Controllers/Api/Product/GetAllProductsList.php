@@ -1,20 +1,21 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Product;
+namespace Modules\Warehouse\Http\Controllers\Api\Product;
 
-use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\Product\ProductCollection;
-use Modules\Modules\Warehouse\Models\Product;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\Product\ProductCollection;
 use Modules\Warehouse\Http\Resources\Warehouse\WarehouseDocumentCollection;
+use Modules\Warehouse\Http\Resources\WarehouseProduct\WarehouseProductCollection;
+use Modules\Warehouse\Models\Product;
+use Modules\Warehouse\Models\WarehouseProduct;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Get(
  *     path="/api/products/all",
  *     operationId="getProductsList",
- *     tags={"Products"},
+ *     tags={"Warehouse > Products"},
  *     summary="Get list of products",
  *     description="Returns list of products for the tenant",
  *     @OA\Parameter(
@@ -29,9 +30,7 @@ use OpenApi\Annotations as OA;
  *         description="Successful operation",
  *         @OA\JsonContent(
  *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(ref="#/components/schemas/Product")
+ *                 property="data"
  *             ),
  *             @OA\Property(
  *                 property="meta",
@@ -68,10 +67,17 @@ class GetAllProductsList extends BaseCrudHandler
     {
         $tenantId = $this->tenant?->id;
 
-        $query = Product::ForTenant($tenantId)->when(!empty($attributes['search']), function ($query) use ($attributes) {
-            $query->where('name', 'like', '%' . $attributes['search'] . '%')
-                ->orWhere('code', 'like', '%' . $attributes['search'] . '%');
-        });
+        $query = Product::ForTenant($tenantId);
+
+        if ($this->request->has('search')) {
+            $search = $this->request->get('search');
+
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
+            });
+        }
+
 
 //        if ($include) {
 //            $includes = explode(',', $include);
@@ -83,8 +89,24 @@ class GetAllProductsList extends BaseCrudHandler
 //            }
 //        }
 
-        $products = $query->paginate(20);
+        if ($this->shouldPaginate()) {
+            $paginationParams = $this->getPaginationParams();
 
-        return Responder::success(['products' => new ProductCollection($products)]);
+            $products = $query->paginate(
+                $paginationParams['per_page'],
+                ['*'],
+                'page',
+                $paginationParams['page']
+            );
+        } else {
+            $products = $query->orderBy('created_at', 'desc')->get();
+        }
+
+        return Responder::success(new ProductCollection($products));
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

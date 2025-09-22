@@ -1,20 +1,18 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Product;
+namespace Modules\Warehouse\Http\Controllers\Api\Product;
 
-use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\HttpRequestHandler;
-use Modules\Modules\Shared\Services\Responder;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\HttpRequestHandler;
+use Modules\Shared\Services\Responder;
 use Modules\Warehouse\Http\Resources\Warehouse\WarehouseDocumentCollection;
 use OpenApi\Annotations as OA;
-use function Modules\Warehouse\Http\Controllers\Api\Product\app;
 
 /**
  * @OA\Get(
  *     path="/api/cutunix/products/all",
  *     operationId="getCutunixProductsList",
- *     tags={"Products"},
+ *     tags={"Warehouse > Products"},
  *     summary="Get list of products in cutunix portal",
  *     description="Returns list of products of cutunix portal",
  *     @OA\Parameter(
@@ -50,5 +48,10 @@ class GetCutunixProductsList extends BaseCrudHandler
         return Responder::success([
             'products' => $productsRequestResponse['data']['products']
         ]);
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

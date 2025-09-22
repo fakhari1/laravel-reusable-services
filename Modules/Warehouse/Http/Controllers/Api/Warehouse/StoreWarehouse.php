@@ -1,22 +1,22 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Warehouse;
+namespace Modules\Warehouse\Http\Controllers\Api\Warehouse;
 
 use Illuminate\Validation\Rule;
 use Modules\Identity\Http\Controllers\Address\StoreAddress;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Controllers\Api\Rack\StoreRack;
-use Modules\Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
-use Modules\Modules\Warehouse\Models\Warehouse;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Controllers\Api\Rack\StoreRack;
+use Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
+use Modules\Warehouse\Models\Warehouse;
+use Modules\Warehouse\Models\WarehouseRack;
 use OpenApi\Annotations as OA;
-use function Modules\Warehouse\Http\Controllers\Api\Warehouse\auth;
 
 /**
  * @OA\Post(
  *     path="/api/warehouses/store",
  *     operationId="storeWarehouse",
- *     tags={"Warehouses"},
+ *     tags={"Warehouse > Warehouses"},
  *     summary="Store new warehouse",
  *     description="Returns warehouse data",
  *     @OA\RequestBody(
@@ -41,7 +41,6 @@ use function Modules\Warehouse\Http\Controllers\Api\Warehouse\auth;
  *     @OA\Response(
  *         response=201,
  *         description="Successful operation",
- *         @OA\JsonContent(ref="#/components/schemas/Warehouse")
  *     ),
  *     @OA\Response(
  *         response=422,
@@ -77,7 +76,8 @@ class StoreWarehouse extends BaseCrudHandler
 
         if (isset($attributes['racks']))
             foreach ($attributes['racks'] as $rack) {
-                StoreRack::run([
+                WarehouseRack::create([
+                    'tenant_id' => $this->tenant?->id,
                     'warehouse_id' => $warehouse->id,
                     'name' => $rack['name'],
                     'code' => $rack['code'] ?? $rackCode,
@@ -95,16 +95,25 @@ class StoreWarehouse extends BaseCrudHandler
     {
         return [
             'name' => ['required'],
-            'code' => ['required', 'string', 'max:255', Rule::unique('warehouses', 'code')->where(function ($query) {
+            'code' => ['required', Rule::unique('warehouses', 'code')->where(function ($query) {
                 $query->where('tenant_id', $this->tenant?->id);
             })],
             'type' => 'nullable|string|max:255',
-            'storekeeper_id' => ['required', 'exists:tenant_has_staff,id'],
+            'storekeeper_id' => ['required', Rule::exists('tenant_has_staff', 'id')->where(function ($query) {
+                $query->where('tenant_id', $this->tenant?->id);
+            })],
             'address' => 'nullable|string',
 //            'province_id' => 'required|integer',
 //            'city_id' => 'required|integer',
             'account_id' => 'nullable|integer',
-            'description' => 'nullable|string|max:1000'
+            'description' => 'nullable|string|max:1000',
+            'racks' => ['required', 'array'],
+            'racks.*.name' => ['required']
         ];
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

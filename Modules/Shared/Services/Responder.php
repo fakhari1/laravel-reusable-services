@@ -1,11 +1,9 @@
 <?php
 
-namespace Modules\Modules\Shared\Services;
+namespace Modules\Shared\Services;
 
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use function Modules\Shared\Services\response;
-use function Modules\Shared\Services\trans;
 
 class Responder
 {

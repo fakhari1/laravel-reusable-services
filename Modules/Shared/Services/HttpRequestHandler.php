@@ -1,11 +1,11 @@
 <?php
 
-namespace Modules\Modules\Shared\Services;
+namespace Modules\Shared\Services;
 
+use HttpRequest;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use function Modules\Shared\Services\trans;
 
 class HttpRequestHandler
 {

@@ -1,8 +1,9 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Models;
+namespace Modules\Warehouse\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Modules\Identity\Models\TenantCustomer;
 use Modules\Identity\Models\TenantStaff;
 
 class WarehouseTransferDocument extends Model
@@ -10,9 +11,7 @@ class WarehouseTransferDocument extends Model
     protected $fillable = [
         'warehouse_id',
         'deliverer_id',
-        'receiver',
-        'status',
-        'description',
+        'receiver_id',
     ];
 
     public function warehouse()
@@ -23,6 +22,11 @@ class WarehouseTransferDocument extends Model
     public function deliverer()
     {
         return $this->belongsTo(TenantStaff::class, 'deliverer_id');
+    }
+
+    public function receiver()
+    {
+        return $this->belongsTo(TenantCustomer::class, 'receiver_id');
     }
 
     public function warehouseDocument()

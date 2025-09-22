@@ -1,10 +1,8 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Resources\Warehouse;
+namespace Modules\Warehouse\Http\Resources\Warehouse;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\ResourceCollection;
-use Modules\Modules\Shared\Http\Resources\BaseResourceCollection;
+use Modules\Shared\Http\Resources\BaseResourceCollection;
 
 class WarehouseCollection extends BaseResourceCollection
 {
@@ -14,7 +12,7 @@ class WarehouseCollection extends BaseResourceCollection
     protected function transformCollection($collection)
     {
         return $collection->map(function ($warehouse) {
-            return new WarehouseResource($warehouse);
+            return new $this->resourceClass($warehouse);
         });
     }
 }

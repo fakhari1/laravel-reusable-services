@@ -1,20 +1,20 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\ProductCategory;
+namespace Modules\Warehouse\Http\Controllers\Api\ProductCategory;
 
-use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryResource;
-use Modules\Modules\Warehouse\Models\ProductCategory;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Illuminate\Http\Request;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryResource;
+use Modules\Warehouse\Models\ProductCategory;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Put(
  *     path="/api/product-categories/{id}/update",
  *     operationId="updateProductCategory",
- *     tags={"ProductCategories"},
+ *     tags={"Warehouse > ProductCategories"},
  *     summary="Update existing product category",
  *     description="Returns updated product category data",
  *     @OA\Parameter(
@@ -37,8 +37,7 @@ use OpenApi\Annotations as OA;
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(ref="#/components/schemas/ProductCategory")
+ *         description="Successful operation"
  *     ),
  *     @OA\Response(
  *         response=403,
@@ -81,13 +80,20 @@ class UpdateProductCategory extends BaseCrudHandler
         $tenantId = $this->tenant?->id;
 
         return [
-            'parent_id' => ['nullable', 'integer', 'exists:product_categories,id'],
-            'code' => ['required', 'string', 'max:255', Rule::unique('product_categories', 'code')->where(function ($query) {
-                $query->where('tenant_id', $this->tenant?->id);
+            'parent_id' => ['nullable', 'integer', Rule::exists('product_categories', 'id')->where(function ($query) use ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            })],
+            'code' => ['required', Rule::unique('product_categories', 'code')->where(function ($query) use ($tenantId) {
+                $query->where('tenant_id', $tenantId);
             })->ignore($this->request->id)],
             'name' => ['required'],
             'status' => ['required'],
             'description' => 'nullable|string|max:1000'
         ];
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

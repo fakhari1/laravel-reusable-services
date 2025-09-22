@@ -1,9 +1,9 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Providers;
+namespace Modules\Warehouse\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Modules\Central\Utils\Helpers;
+use Modules\Shared\Helpers\GlobalHelpers;
 
 class WarehouseServiceProvider extends ServiceProvider
 {
@@ -14,8 +14,8 @@ class WarehouseServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        $this->loadMigrationsFrom(Helpers::modulePath('Warehouse') . 'Database/Migrations');
+        $this->loadMigrationsFrom(GlobalHelpers::modulePath('Warehouse') . 'Database/Migrations');
 
-        $this->loadRoutesFrom(Helpers::modulePath('Warehouse') . 'Routes/tenant/api_warehouse_routes.php');
+        $this->loadRoutesFrom(GlobalHelpers::modulePath('Warehouse') . 'Routes/tenant/api_warehouse_routes.php');
     }
 }

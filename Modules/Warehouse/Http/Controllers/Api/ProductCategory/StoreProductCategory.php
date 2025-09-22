@@ -1,12 +1,12 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\ProductCategory;
+namespace Modules\Warehouse\Http\Controllers\Api\ProductCategory;
 
 use Illuminate\Validation\Rule;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryResource;
-use Modules\Modules\Warehouse\Models\ProductCategory;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryResource;
+use Modules\Warehouse\Models\ProductCategory;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,7 +14,7 @@ use OpenApi\Annotations as OA;
  *     path="/api/product-categories/store",
  *     summary="Create a new product category",
  *     operationId="storeProductCategory",
- *     tags={"ProductCategories"},
+ *     tags={"Warehouse > ProductCategories"},
  *     security={{"bearer_token":{}}},
  *     @OA\RequestBody(
  *         required=true,
@@ -33,7 +33,7 @@ use OpenApi\Annotations as OA;
  *         @OA\JsonContent(
  *             allOf={
  *                 @OA\Schema(
- *                     @OA\Property(property="data", ref="#/components/schemas/ProductCategory")
+ *                     @OA\Property(property="data")
  *                 )
  *             }
  *         )
@@ -64,13 +64,20 @@ class StoreProductCategory extends BaseCrudHandler
     public function validate()
     {
         return [
-            'parent_id' => ['nullable', 'integer', 'exists:product_categories,id'],
-            'code' => ['required', 'string', 'max:255', Rule::unique('product_categories', 'code')->where(function ($query) {
+            'parent_id' => ['nullable', 'integer', Rule::exists('product_categories', 'id')->where(function ($query) {
+                $query->where('tenant_id', $this->tenant?->id);
+            })],
+            'code' => ['required', Rule::unique('product_categories', 'code')->where(function ($query) {
                 $query->where('tenant_id', $this->tenant?->id);
             })],
             'name' => ['required'],
             'status' => ['required'],
-            'description' => 'nullable|string|max:1000'
+            'description' => ['nullable', 'string', 'max:1000']
         ];
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

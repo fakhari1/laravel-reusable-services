@@ -1,11 +1,13 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Models;
+namespace Modules\Warehouse\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class WarehouseDocumentProduct extends Model
 {
+    protected $table = 'warehouse_document_has_products';
+
     protected $fillable = [
         'warehouse_document_id',
         'rack_id',
@@ -16,18 +18,16 @@ class WarehouseDocumentProduct extends Model
 
     public function warehouseDocument()
     {
-        return $this->belongsTo(WarehouseDocument::class);
+        return $this->belongsTo(WarehouseDocument::class, 'warehouse_document_id');
     }
 
     public function rack()
     {
-        return $this->belongsTo(Rack::class);
+        return $this->belongsTo(WarehouseRack::class, 'rack_id');
     }
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
-
-
 }

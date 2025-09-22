@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Resources\Rack;
+namespace Modules\Warehouse\Http\Resources\Rack;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Warehouse\Http\Resources\Warehouse\WarehouseDocumentResource;
+use Modules\Shared\Helpers\DateTimeHelpers;
 
 class RackResource extends JsonResource
 {
@@ -18,9 +18,14 @@ class RackResource extends JsonResource
         return [
             'id' => $this->id,
             'warehouse_id' => $this->warehouse_id,
+            'warehouse' => [
+                'id' => $this->warehouse_id,
+                'name' => $this->warehouse?->name
+            ],
             'name' => $this->name,
-            'code' => $this->code,
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'description' => $this->description,
+//            'code' => $this->code,
+            'created_at' => DateTimeHelpers::gregorianDateTimeToJalali($this->created_at?->format('Y-m-d H:i:s')),
 //            'warehouse' => $this->when(!empty($this->warehouse), fn() => new WarehouseResource($this->warehouse)),
         ];
     }

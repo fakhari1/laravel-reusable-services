@@ -1,18 +1,18 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Warehouse;
+namespace Modules\Warehouse\Http\Controllers\Api\Warehouse;
 
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\Warehouse\WarehouseCollection;
-use Modules\Modules\Warehouse\Models\Warehouse;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\Warehouse\WarehouseCollection;
+use Modules\Warehouse\Models\Warehouse;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Get(
  *     path="/api/warehouses/all",
  *     operationId="getWarehousesList",
- *     tags={"Warehouses"},
+ *     tags={"Warehouse > Warehouses"},
  *     summary="Get list of warehouses",
  *     description="Returns list of warehouses for the tenant",
  *     @OA\Parameter(
@@ -27,9 +27,7 @@ use OpenApi\Annotations as OA;
  *         description="Successful operation",
  *         @OA\JsonContent(
  *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(ref="#/components/schemas/Warehouse")
+ *                 property="data"
  *             ),
  *             @OA\Property(
  *                 property="meta",
@@ -66,7 +64,8 @@ class GetAllWarehousesList extends BaseCrudHandler
     {
         $tenantId = $this->tenant?->id;
 
-        $query = Warehouse::forTenant($tenantId)->with(['racks', 'address', 'storekeeper']);
+        $query = Warehouse::ForTenant($tenantId)
+            ->with(['racks', 'address', 'storekeeper']);
 
         if ($this->request->has('search')) {
             $search = $this->request->get('search');
@@ -97,10 +96,14 @@ class GetAllWarehousesList extends BaseCrudHandler
                 $paginationParams['page']
             );
         } else {
-            $warehouses = $query->get();
+            $warehouses = $query->orderBy('created_at', 'desc')->get();
         }
 
-
         return Responder::success(new WarehouseCollection($warehouses));
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

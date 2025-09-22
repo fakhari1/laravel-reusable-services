@@ -1,17 +1,18 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Rack;
+namespace Modules\Warehouse\Http\Controllers\Api\Rack;
 
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Models\Rack;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Models\WarehouseRack;
 use OpenApi\Annotations as OA;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @OA\Delete(
  *     path="/api/warehouses/racks/{id}/delete",
  *     operationId="destoryRack",
- *     tags={"Racks"},
+ *     tags={"Warehouse > Racks"},
  *     summary="Delete existing rack",
  *     description="Deletes a record and returns no content",
  *     @OA\Parameter(
@@ -35,7 +36,6 @@ use OpenApi\Annotations as OA;
  *     )
  * )
  */
-
 class DestroyRack extends BaseCrudHandler
 {
     /**
@@ -43,6 +43,21 @@ class DestroyRack extends BaseCrudHandler
      */
     public function execute(array $attributes = [])
     {
-        return Responder::success(Rack::findOrFail($attributes['id'])->delete());
+        $rack = WarehouseRack::findOrFail($attributes['id']);
+
+        if ($rack->warehouseProducts()->count() > 0) {
+            return Responder::error('رگال مورد نظر دارای محصول است و قابل حذف نیست', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($rack->documentProducts()->count() > 0) {
+            return Responder::error('رگال مورد نظر دارای سند است و قابل حذف نیست', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return Responder::success($rack->delete());
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

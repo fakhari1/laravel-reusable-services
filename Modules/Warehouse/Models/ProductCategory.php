@@ -1,30 +1,12 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Models;
+namespace Modules\Warehouse\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Tenancy\Models\Tenant;
 use OpenApi\Annotations as OA;
-use function Modules\Warehouse\Models\trans;
 
-/**
- * @OA\Schema(
- *     schema="ProductCategory",
- *     type="object",
- *     title="ProductCategory",
- *     required={"code", "type"},
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="tenant_id", type="integer", example=1),
- *     @OA\Property(property="parent_id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", example="product category 1"),
- *     @OA\Property(property="code", type="string", example="WH001"),
- *     @OA\Property(property="status", type="string", example="{active, inactive}"),
- *     @OA\Property(property="description", type="string", nullable=true, example="nullable"),
- *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T00:00:00Z"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-01T00:00:00Z")
- * )
- */
 class ProductCategory extends Model
 {
     protected $fillable = [
@@ -79,6 +61,26 @@ class ProductCategory extends Model
                 'value' => trans("container.{$status}")
             ];
         }
+
+        return $result;
+    }
+
+    public static function scopeGetHierarchicalCategoriesEloquent($query)
+    {
+        return self::buildHierarchy($query, null);
+    }
+
+    private static function buildHierarchy($query, $parentId = null)
+    {
+        $result = collect();
+
+        $children = $query->where('parent_id', $parentId);
+
+        $children->each(function ($category) use (&$result, &$query) {
+            $result->push($category);
+            $childCategories = self::buildHierarchy($query, $category->id);
+            $result = $result->merge($childCategories);
+        });
 
         return $result;
     }

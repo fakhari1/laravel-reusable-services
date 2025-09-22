@@ -1,19 +1,18 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\ProductCategory;
+namespace Modules\Warehouse\Http\Controllers\Api\ProductCategory;
 
-use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryCollection;
-use Modules\Modules\Warehouse\Models\ProductCategory;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryCollection;
+use Modules\Warehouse\Models\ProductCategory;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Get(
  *     path="/api/product-categories/all",
  *     operationId="getProductCategoriesList",
- *     tags={"ProductCategories"},
+ *     tags={"Warehouse > ProductCategories"},
  *     summary="Get list of product categories",
  *     description="Returns list of product categories for the tenant",
  *     @OA\Parameter(
@@ -28,9 +27,7 @@ use OpenApi\Annotations as OA;
  *         description="Successful operation",
  *         @OA\JsonContent(
  *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(ref="#/components/schemas/ProductCategory")
+ *                 property="data"
  *             ),
  *             @OA\Property(
  *                 property="meta",
@@ -63,7 +60,7 @@ class GetAllProductCategoriesList extends BaseCrudHandler
     /**
      * Handle the incoming request.
      */
-    public function execute(array $attributes = [])
+    public function handle(array $attributes = [])
     {
         $tenantId = $this->tenant?->id;
 
@@ -79,10 +76,13 @@ class GetAllProductCategoriesList extends BaseCrudHandler
 //            }
 //        }
 
-        $productCategories = $query->paginate(20);
+        $productCategories = $query->orderBy('created_at', 'desc')->paginate(200);
 
-        return Responder::success([
-            new ProductCategoryCollection($productCategories),
-        ]);
+        return Responder::success(new ProductCategoryCollection($productCategories));
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

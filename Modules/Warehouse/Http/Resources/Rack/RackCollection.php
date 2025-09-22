@@ -1,9 +1,10 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Resources\Rack;
+namespace Modules\Warehouse\Http\Resources\Rack;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Modules\Warehouse\Http\Resources\WarehouseProduct\WarehouseProductResource;
 
 class RackCollection extends ResourceCollection
 {
@@ -12,26 +13,13 @@ class RackCollection extends ResourceCollection
      *
      * @return array<int|string, mixed>
      */
-    public function toArray(Request $request): array
+    protected string $resourceKey = 'racks';
+    protected string $resourceClass = RackResource::class;
+
+    protected function transformCollection($collection)
     {
-        return [
-            'racks' => $this->collection->map(function ($rack) {
-                return new RackResource($rack);
-            }),
-            'meta' => [
-                'total' => $this->total(),
-                'per_page' => $this->perPage(),
-                'current_page' => $this->currentPage(),
-                'last_page' => $this->lastPage(),
-                'from' => $this->firstItem(),
-                'to' => $this->lastItem(),
-            ],
-            'links' => [
-                'first' => $this->url(1),
-                'last' => $this->url($this->lastPage()),
-                'prev' => $this->previousPageUrl(),
-                'next' => $this->nextPageUrl(),
-            ],
-        ];
+        return $collection->map(function ($rack) {
+            return new $this->resourceClass($rack);
+        });
     }
 }

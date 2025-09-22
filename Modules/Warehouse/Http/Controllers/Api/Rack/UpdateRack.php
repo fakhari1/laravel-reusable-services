@@ -1,19 +1,20 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Rack;
+namespace Modules\Warehouse\Http\Controllers\Api\Rack;
 
 use App\Models\Rack;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
 use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\Rack\RackResource;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\Rack\RackResource;
+use Modules\Warehouse\Models\WarehouseRack;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Put(
  *     path="/api/warehouses/racks/{id}/update",
  *     operationId="updateRack",
- *     tags={"Racks"},
+ *     tags={"Warehouse > Racks"},
  *     summary="Update existing rack",
  *     description="Returns updated rack data",
  *     @OA\Parameter(
@@ -56,7 +57,7 @@ class UpdateRack extends BaseCrudHandler
      */
     public function execute(array $attributes = [])
     {
-        $rack = Rack::where('id', $attributes['id'])->firstOrFail();
+        $rack = WarehouseRack::where('id', $attributes['id'])->firstOrFail();
 
         $rack->update([
             'name' => $attributes['name'],
@@ -66,5 +67,10 @@ class UpdateRack extends BaseCrudHandler
         return Responder::success([
             'rack' => new RackResource($rack)
         ]);
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

@@ -1,17 +1,17 @@
 <?php
 
-namespace Modules\Modules\Shared\Http\Controllers;
+namespace Modules\Shared\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Modules\Modules\Shared\Services\Responder;
+use Modules\Shared\Services\Responder;
 use Modules\Tenancy\Models\Tenant;
-use function Modules\Shared\Http\Controllers\auth;
-use function Modules\Shared\Http\Controllers\request;
-use function Modules\Shared\Http\Controllers\setPermissionsTeamId;
+use Symfony\Component\Finder\Exception\AccessDeniedException;
 
 /**
  *
@@ -33,11 +33,20 @@ abstract class BaseCrudHandler extends Controller
 
     public function __invoke()
     {
+        return $this->startup();
+    }
+
+    public function startup()
+    {
         $this->request = request();
         $attributes = $this->request->route()->parameters();
         $attributes = array_merge($attributes, $this->request->all());
 
         $this->beforeExecution($attributes);
+
+        if (!$this->authorize()) {
+            throw new AuthorizationException('You do not have permission to perform this action.');
+        }
 
         if (method_exists(self::class, 'validate') && !empty($this->validate())) {
             $validatedData = $this->handleValidation();
@@ -45,6 +54,10 @@ abstract class BaseCrudHandler extends Controller
             if (!$validatedData) {
                 throw ValidationException::withMessages([]);
             }
+        }
+
+        if (method_exists(self::class, 'afterValidator')) {
+            $this->afterValidator($attributes);
         }
 
         $result = $this->handle($attributes);
@@ -120,6 +133,11 @@ abstract class BaseCrudHandler extends Controller
         return [];
     }
 
+    public function afterValidator(array $attributes)
+    {
+
+    }
+
     public function handleValidation()
     {
         if (count($this->validate()) > 0)
@@ -177,5 +195,9 @@ abstract class BaseCrudHandler extends Controller
         return $query->orderBy($sortBy, $sortDirection);
     }
 
+    public function authorize()
+    {
+        return false;
+    }
 
 }

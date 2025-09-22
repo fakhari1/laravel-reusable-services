@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\Modules\Warehouse\Models\WarehouseDocument;
+use Modules\Warehouse\Models\WarehouseDocument;
 
 return new class extends Migration
 {
@@ -16,9 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('warehouse_id')->constrained('warehouses');
             $table->foreignId('deliverer_id')->constrained('tenant_has_staff');
-            $table->string('receiver');
-            $table->enum('status', WarehouseDocument::$statuses)->default(WarehouseDocument::STATUS_PENDING);
-            $table->text('description')->nullable();
+            $table->foreignId('receiver_id')->constrained('tenant_has_customers');
             $table->timestamps();
             $table->softDeletes();
         });
@@ -29,6 +27,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
+
         Schema::dropIfExists('warehouse_transfer_documents');
+        Schema::enableForeignKeyConstraints();
+
     }
 };

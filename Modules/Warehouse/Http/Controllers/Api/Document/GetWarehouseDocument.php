@@ -1,18 +1,18 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Document;
+namespace Modules\Warehouse\Http\Controllers\Api\Document;
 
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\WarehouseDocument\WarehouseDocumentResource;
-use Modules\Modules\Warehouse\Models\WarehouseDocument;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\WarehouseDocument\WarehouseDocumentResource;
+use Modules\Warehouse\Models\WarehouseDocument;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Get(
  *     path="/api/warehouses/documents/{id}/get",
  *     operationId="getWarehouseDocumentById",
- *     tags={"WarehouseDocuments"},
+ *     tags={"Warehouse > Documents"},
  *     summary="Get warehouse document information",
  *     description="Returns warehouse document data",
  *     @OA\Parameter(
@@ -40,9 +40,15 @@ class GetWarehouseDocument extends BaseCrudHandler
 {
     public function execute(array $attributes = [])
     {
-        $warehouseDocument = WarehouseDocument::findOrFail($attributes['id'])->load(['document', 'staff', 'warehouse']);
+        $warehouseDocument = WarehouseDocument::findOrFail($attributes['id'])->load(['staff', 'warehouse', 'documentable', 'products']);
 
-        return Responder::success(new WarehouseDocumentResource($warehouseDocument));
+        return Responder::success([
+            'warehouse_document' => new WarehouseDocumentResource($warehouseDocument)
+        ]);
+    }
 
+    public function authorize()
+    {
+        return true;
     }
 }

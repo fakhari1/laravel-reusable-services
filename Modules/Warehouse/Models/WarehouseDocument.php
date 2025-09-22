@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Models;
+namespace Modules\Warehouse\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Identity\Models\TenantStaff;
@@ -32,6 +32,9 @@ use OpenApi\Annotations as OA;
  */
 class WarehouseDocument extends Model
 {
+    protected $casts = [
+        'date' => 'datetime'
+    ];
     public const TYPE_RECEIPT = 'receipt';
     public const TYPE_TRANSFER = 'transfer';
 
@@ -56,16 +59,20 @@ class WarehouseDocument extends Model
         'tenant_id',
         'staff_id',
         'warehouse_id',
+        'code',
         'type',
+        'delivery_type',
         'documentable_type',
         'documentable_id',
         'status',
         'description',
+        'date',
+        'deleted_at'
     ];
 
     public function tenant()
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Tenant::class, 'tenant_id');
     }
 
     public function staff()
@@ -75,7 +82,7 @@ class WarehouseDocument extends Model
 
     public function warehouse()
     {
-        return $this->belongsTo(Warehouse::class);
+        return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
     public function documentable()
@@ -85,11 +92,41 @@ class WarehouseDocument extends Model
 
     public function products()
     {
-        return $this->hasMany(WarehouseDocumentProduct::class);
+        return $this->belongsToMany(Product::class, 'warehouse_document_has_products')
+            ->withPivot(['rack_id', 'unit', 'count'])
+            ->withTimestamps();
     }
+
+    public function productDetails()
+    {
+        return $this->belongsToMany(Product::class, 'warehouse_document_has_products')
+            ->withPivot(['id', 'rack_id', 'unit', 'count'])
+            ->withTimestamps()
+            ->with(['pivot.rack']);
+    }
+
 
     public function scopeForTenant($query, $tenantId)
     {
         return $query->where('tenant_id', $tenantId);
+    }
+
+    public function scopeForWarehouse($query, $warehouseId)
+    {
+        return $query->where('warehouse_id', $warehouseId);
+    }
+
+    public static function getLastCodeOfWarehouseDocument($tenantId = null, $warehouseId = null)
+    {
+        $query = self::query();
+
+        if (!is_null($tenantId)) {
+            $query->ForTenant($tenantId);
+        }
+
+        if (!is_null($warehouseId)) {
+            $query->ForWarehouse($warehouseId);
+        }
+        return $query->count();
     }
 }

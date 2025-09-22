@@ -1,35 +1,11 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Models;
+namespace Modules\Warehouse\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Tenancy\Models\Tenant;
 use OpenApi\Annotations as OA;
-use function Modules\Warehouse\Models\trans;
 
-/**
- * @OA\Schema(
- *     schema="Product",
- *     type="object",
- *     title="Product",
- *     required={"code", "type"},
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="tenant_id", type="integer", example=1),
- *     @OA\Property(property="dasterang_product_id", type="integer", example=1),
- *     @OA\Property(property="product_category_id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", example="product 1"),
- *     @OA\Property(property="main_counting_unit", type="integer", example=1),
- *     @OA\Property(property="sub_counting_unit", type="integer", example=1),
- *     @OA\Property(property="stock_count", type="integer", example=1),
- *     @OA\Property(property="coefficient", type="integer", example=1),
- *     @OA\Property(property="code", type="string", example="WH001"),
- *     @OA\Property(property="status", type="string", example="{active, inactive}"),
- *     @OA\Property(property="type", type="string", example="type01"),
- *     @OA\Property(property="description", type="string", nullable=true, example="nullable"),
- *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T00:00:00Z"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-01T00:00:00Z")
- * )
- */
 class Product extends Model
 {
     protected $fillable = [
@@ -38,10 +14,10 @@ class Product extends Model
         'code',
         'product_category_id',
         'name',
+        'beginning_inventory',
         'main_counting_unit',
-        'sub_counting_unit',
-        'stock_count',
         'coefficient',
+        'sub_counting_unit',
         'status',
         'thumbnail',
         'image',
@@ -74,6 +50,28 @@ class Product extends Model
         self::TYPE_SEMI_FINISHED,
     ];
 
+    public const COUNTING_UNIT_PACKAGE = 'بسته';
+    public const COUNTING_UNIT_BOX = 'جعبه';
+    public const COUNTING_UNIT_METER = 'متر';
+    public const COUNTING_UNIT_SQUARE_METER = 'متر مربع';
+    public const COUNTING_UNIT_LITER = 'لیتر';
+    public const COUNTING_UNIT_KILOGRAM = 'کیلوگرم';
+    public const COUNTING_UNIT_GRAM = 'گرم';
+    public const COUNTING_UNIT_COUNT = 'عدد';
+    public const COUNTING_UNIT_PALLET = 'پالت';
+
+    public static array $countingUnits = [
+        self::COUNTING_UNIT_PACKAGE,
+        self::COUNTING_UNIT_BOX,
+        self::COUNTING_UNIT_METER,
+        self::COUNTING_UNIT_SQUARE_METER,
+        self::COUNTING_UNIT_LITER,
+        self::COUNTING_UNIT_KILOGRAM,
+        self::COUNTING_UNIT_GRAM,
+        self::COUNTING_UNIT_COUNT,
+        self::COUNTING_UNIT_PALLET
+    ];
+
 
     public function tenant()
     {
@@ -88,6 +86,10 @@ class Product extends Model
     public function scopeForTenant($query, $tenantId)
     {
         return $query->where('tenant_id', $tenantId);
+    }
+    public function scopeForRack($query, $rackId)
+    {
+        return $query->where('rack_id', $rackId);
     }
 
     public const STATUS_ACTIVE = 'active';
@@ -111,6 +113,38 @@ class Product extends Model
         return $result;
     }
 
+    public function getTranslatedType()
+    {
+        $result = [];
+        if (is_array($this->type)) {
+            foreach ($this->type as $type) {
+                $result[] = [
+                    'key' => $type,
+                    'value' => trans("container.{$type}")
+                ];
+            }
+        } else {
+            $result[] = [
+                'key' => $this->type,
+                'value' => trans("container.{$this->type}")
+            ];
+        }
+
+        return $result;
+    }
+
+    public static function getTranslatedCountingUnits()
+    {
+        $result = [];
+        foreach (self::$countingUnits as $unit) {
+            $result[] = [
+                'key' => $unit,
+                'value' => $unit
+            ];
+        }
+
+        return $result;
+    }
 
     public static function getTranslatedStatuses(): array
     {
@@ -123,5 +157,70 @@ class Product extends Model
         }
 
         return $result;
+    }
+
+    public function warehouseDocuments()
+    {
+        return $this->belongsToMany(
+            WarehouseDocument::class,
+            'warehouse_document_has_products'
+        )
+            ->withPivot(['id', 'rack_id', 'unit', 'count'])
+            ->withTimestamps();
+    }
+
+    public function warehouses()
+    {
+        return $this->belongsToMany(
+            WarehouseProduct::class,
+            'warehouse_has_products',
+        )
+            ->withPivot(['rack_id', 'main_counting_unit', 'coefficient', 'sub_counting_unit', 'beginning_inventory', 'quantity'])
+            ->withTimestamps();
+    }
+
+    public function warehouseProducts()
+    {
+        return $this->hasMany(WarehouseProduct::class, 'product_id');
+    }
+
+    public function hasSameCountingUnits()
+    {
+        return $this->main_counting_unit == $this->sub_counting_unit;
+    }
+
+    public function getTotalQuantity()
+    {
+        $sum = 0;
+
+        $this->warehouseProducts()->each(function ($wp) use (&$sum) {
+            $sum += $wp->quantity;
+        });
+
+        return $sum;
+    }
+
+
+    public function warehouseDocumentProducts()
+    {
+        return $this->hasMany(WarehouseDocumentProduct::class, 'product_id');
+    }
+
+    public function computeTotalQuantities()
+    {
+        $this->warehouseDocumentProducts()->each(function ($documentHasProduct) {
+            $warehouseDocument = $documentHasProduct->warehouseDocument;
+
+            $warehouseHasProduct = $this->warehouseProducts()
+                ->where('warehouse_id', $warehouseDocument->warehouse_id)
+                ->where('rack_id', $documentHasProduct->rack_id)
+                ->first();
+
+            $warehouseHasProduct->update([
+                'quantity' => 0
+            ]);
+
+//            $warehouseHasProduct->computeQuantity($documentHasProduct->count, $documentHasProduct->unit, $warehouseDocument->type);
+        });
     }
 }

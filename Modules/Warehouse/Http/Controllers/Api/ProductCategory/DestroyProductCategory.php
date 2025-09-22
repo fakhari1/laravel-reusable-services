@@ -1,18 +1,19 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\ProductCategory;
+namespace Modules\Warehouse\Http\Controllers\Api\ProductCategory;
 
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
 use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Models\ProductCategory;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Models\Product;
+use Modules\Warehouse\Models\ProductCategory;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Delete(
  *     path="/api/product-categories/{id}/delete",
  *     operationId="deleteProductCategory",
- *     tags={"ProductCategories"},
+ *     tags={"Warehouse > ProductCategories"},
  *     summary="Delete existing product category",
  *     description="Deletes a record and returns no content",
  *     @OA\Parameter(
@@ -41,5 +42,10 @@ class DestroyProductCategory extends BaseCrudHandler
     public function execute(array $attributes = [])
     {
         return Responder::success(ProductCategory::findOrFail($attributes['id'])->delete());
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

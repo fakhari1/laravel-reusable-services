@@ -1,17 +1,18 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Warehouse;
+namespace Modules\Warehouse\Http\Controllers\Api\Warehouse;
 
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Models\Warehouse;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Models\Warehouse;
 use OpenApi\Annotations as OA;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @OA\Delete(
  *     path="/api/warehouses/{id}/delete",
  *     operationId="destroyWarehouse",
- *     tags={"Warehouses"},
+ *     tags={"Warehouse > Warehouses"},
  *     summary="Delete existing warehouse with it's racks",
  *     description="Deletes a record and returns no content",
  *     @OA\Parameter(
@@ -44,12 +45,25 @@ class DestroyWarehouse extends BaseCrudHandler
     {
         $warehouse = Warehouse::whereId($attributes['id'])->firstOrFail();
 
-        $warehouse->racks()->each(function ($rack) {
-            $rack->delete();
-        });
+        if ($warehouse->racks()->count() > 0) {
+            return Responder::error('انبار مورد نظر دارای رگال است و قابل حذف نیست', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($warehouse->documents()->count() > 0) {
+            return Responder::error('انبار مورد نظر دارای سند حواله / رسید است و قابل حذف نیست', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($warehouse->warehouseProducts()->count() > 0) {
+            return Responder::error('انبار مورد نظر دارای سند محصول است و قابل حذف نیست', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         $warehouse->address()->delete();
 
         return Responder::success($warehouse->delete());
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

@@ -1,19 +1,19 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\ProductCategory;
+namespace Modules\Warehouse\Http\Controllers\Api\ProductCategory;
 
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
 use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryResource;
-use Modules\Modules\Warehouse\Models\ProductCategory;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryResource;
+use Modules\Warehouse\Models\ProductCategory;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Get(
  *     path="/api/product-categories/{id}/get",
  *     operationId="getProductCategoryById",
- *     tags={"ProductCategories"},
+ *     tags={"Warehouse > ProductCategories"},
  *     summary="Get product category information",
  *     description="Returns product category data",
  *     @OA\Parameter(
@@ -25,8 +25,7 @@ use OpenApi\Annotations as OA;
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(ref="#/components/schemas/ProductCategory")
+ *         description="Successful operation"
  *     ),
  *     @OA\Response(
  *         response=403,
@@ -47,5 +46,10 @@ class GetProductCategory extends BaseCrudHandler
         return Responder::success([
             'data' => new ProductCategoryResource($productCategory)
         ]);
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

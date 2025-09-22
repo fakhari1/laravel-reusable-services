@@ -1,44 +1,20 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Models;
+namespace Modules\Warehouse\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Finance\Models\AccountingAccount;
-use Modules\Finance\Models\AccountingDetailedAccount;
+use Modules\Finance\Models\Account\AccountingDetailedAccount;
 use Modules\Identity\Models\Address;
 use Modules\Identity\Models\TenantStaff;
 use Modules\Tenancy\Models\Tenant;
-use OpenApi\Annotations as OA;
 
 
-/**
- * @OA\Schema(
- *     schema="Warehouse",
- *     type="object",
- *     title="Warehouse",
- *     required={"code", "type"},
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="tenant_id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", example="warehouse 1"),
- *     @OA\Property(property="code", type="string", example="WH001"),
- *     @OA\Property(property="type", type="string", example="main"),
- *     @OA\Property(property="storekeeper_id", type="integer", nullable=true, example=1),
- *     @OA\Property(property="address", type="string"),
- *     @OA\Property(property="account_id", type="integer", nullable=true, example=1),
- *     @OA\Property(property="description", type="string", nullable=true, example="nullable"),
- *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T00:00:00Z"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-01T00:00:00Z"),
- *     @OA\Property(property="racks", type="array", @OA\Items(type="object",
- *                 @OA\Property(property="id", type="integer", example=1),
- *                 @OA\Property(property="name", type="string", example="100"),
- *                 @OA\Property(property="description", type="string", example="nullable", nullable=true),
- *         )
- *     )
- * )
- */
 class Warehouse extends Model
 {
+    protected $appends = [
+        'storekeeper_label'
+    ];
+
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
 
@@ -71,7 +47,7 @@ class Warehouse extends Model
 
     public function racks()
     {
-        return $this->hasMany(Rack::class);
+        return $this->hasMany(WarehouseRack::class, 'warehouse_id');
     }
 
     public function storekeeper()
@@ -89,4 +65,30 @@ class Warehouse extends Model
         return $query->where('tenant_id', $tenantId);
     }
 
+    public function getStorekeeperLabelAttribute()
+    {
+        $storekeeper = $this->storekeeper;
+        $result = $storekeeper->full_name . '-' . $storekeeper->mobile;
+        return $result;
+    }
+
+    public function warehouseProducts()
+    {
+        return $this->hasMany(WarehouseProduct::class, 'warehouse_id');
+    }
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'warehouse_has_products', 'warehouse_id', 'product_id')
+            ->withPivot([
+                'rack_id',
+                'quantity'
+            ])
+            ->withTimestamps();
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(WarehouseDocument::class);
+    }
 }

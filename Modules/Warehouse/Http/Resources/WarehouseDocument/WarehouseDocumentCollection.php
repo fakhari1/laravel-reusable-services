@@ -1,9 +1,10 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Resources\WarehouseDocument;
+namespace Modules\Warehouse\Http\Resources\WarehouseDocument;
 
 use Illuminate\Http\Request;
-use Modules\Modules\Shared\Http\Resources\BaseResourceCollection;
+use Modules\Shared\Http\Resources\BaseResourceCollection;
+use Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
 
 class WarehouseDocumentCollection extends BaseResourceCollection
 {

@@ -1,23 +1,22 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Rack;
+namespace Modules\Warehouse\Http\Controllers\Api\Rack;
 
 use Modules\Identity\Models\Address;
-use Modules\Modules\Shared\Http\Controllers\AsStaticRunner;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\Rack\RackResource;
-use Modules\Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
-use Modules\Modules\Warehouse\Models\Rack;
-use Modules\Modules\Warehouse\Models\Warehouse;
+use Modules\Shared\Http\Controllers\AsStaticRunner;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Http\Resources\Rack\RackResource;
+use Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
+use Modules\Warehouse\Models\WarehouseRack;
+use Modules\Warehouse\Models\Warehouse;
 use OpenApi\Annotations as OA;
-use function Modules\Warehouse\Http\Controllers\Api\Rack\auth;
 
 /**
  * @OA\Post(
  *     path="/api/warehouses/{id}/racks/store",
  *     operationId="storeRack",
- *     tags={"Racks"},
+ *     tags={"Warehouse > Racks"},
  *     summary="Store rack(s) for warehouse",
  *     description="Returns warehouse data",
  *     @OA\RequestBody(
@@ -47,13 +46,12 @@ class StoreRack extends BaseCrudHandler
     {
         if (isset($attributes['racks'])) {
             foreach ($attributes['racks'] as $rack) {
-
-                Rack::create([
+                WarehouseRack::create([
                     'warehouse_id' => $attributes['id'],
                     'name' => $rack['name'],
-                    'status' => Rack::STATUS_ACTIVE,
+                    'status' => WarehouseRack::STATUS_ACTIVE,
                     'description' => $rack['description'] ?? null,
-                    'tenant_id' => auth('api-tenant')->user()->tenant?->id,
+                    'tenant_id' => $this->tenant?->id,
                 ]);
 
             }
@@ -64,15 +62,30 @@ class StoreRack extends BaseCrudHandler
 
         } else {
 
-            $rack = Rack::create([
+            $rack = WarehouseRack::create([
                 'warehouse_id' => $attributes['warehouse_id'],
                 'name' => $attributes['name'],
-                'status' => Rack::STATUS_ACTIVE,
+                'status' => WarehouseRack::STATUS_ACTIVE,
                 'description' => $attributes['description'] ?? null,
-                'tenant_id' => auth('api-tenant')->user()->tenant?->id,
+                'tenant_id' => $this->tenant?->id,
             ]);
 
             return Responder::success(new RackResource($rack));
+        }
+
+    }
+
+    public function authorize()
+    {
+        return true;
+    }
+
+    public function validate()
+    {
+        if (!isset($this->request->racks)) {
+            return [
+                'name' => ['required']
+            ];
         }
     }
 }

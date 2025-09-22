@@ -1,20 +1,19 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Warehouse;
+namespace Modules\Warehouse\Http\Controllers\Api\Warehouse;
 
 use Modules\Finance\Http\Resources\AccountingDetailedAccountResource;
-use Modules\Finance\Models\AccountingDetailedAccount;
 use Modules\Identity\Http\Resources\StaffResource;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
+use Modules\Warehouse\Models\Warehouse;
 use OpenApi\Annotations as OA;
-use function Modules\Warehouse\Http\Controllers\Api\Warehouse\auth;
 
 /**
  * @OA\Get(
  *     path="/api/warehouses/get-create-update-data",
  *     operationId="getWarehouseCreateUpdateData",
- *     tags={"Warehouses"},
+ *     tags={"Warehouse > Warehouses"},
  *     summary="Get warehouse create and update data",
  *     description="Returns warehouse create and update data data",
  *     @OA\Response(
@@ -25,10 +24,6 @@ use function Modules\Warehouse\Http\Controllers\Api\Warehouse\auth;
  *         response=403,
  *         description="Forbidden"
  *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Warehouse not found"
- *     )
  * )
  */
 class GetWarehouseCreateUpdateData extends BaseCrudHandler
@@ -42,10 +37,16 @@ class GetWarehouseCreateUpdateData extends BaseCrudHandler
 //        $accountingDetailedAccounts = AccountingDetailedAccount::ForTenant($this->tenant->id)->doesntHave('children')->get();
 
         return Responder::success([
+            'code' => Warehouse::ForTenant($this->tenant?->id)->count() + 1,
             'staff' => StaffResource::collection($staff),
             'default_storekeeper' => new StaffResource(auth('api-tenant')->user()),
 //            'accounts' => AccountingDetailedAccountResource::collection($accountingDetailedAccounts)
             'accounts' => []
         ]);
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

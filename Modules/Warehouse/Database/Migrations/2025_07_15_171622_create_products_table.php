@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\Modules\Warehouse\Models\Product;
+use Modules\Warehouse\Models\Product;
 
 return new class extends Migration {
     /**
@@ -13,15 +13,15 @@ return new class extends Migration {
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+            $table->foreignId('tenant_id')->constrained('tenants');
             $table->unsignedBigInteger('dasterang_product_id')->nullable();
             $table->string('code');
-            $table->unsignedBigInteger('product_category_id');
+            $table->foreignId('product_category_id')->constrained('product_categories');
             $table->string('name');
+            $table->decimal('beginning_inventory')->default(0);
             $table->string('main_counting_unit');
+            $table->decimal('coefficient', 12, 2)->default(1);
             $table->string('sub_counting_unit')->nullable();
-            $table->integer('stock_count')->default(0);
-            $table->unsignedInteger('coefficient')->default(1);
             $table->enum('status', Product::$statuses)->default(Product::STATUS_ACTIVE);
             $table->string('thumbnail')->nullable();
             $table->string('image')->nullable();
@@ -40,6 +40,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
+
         Schema::dropIfExists('products');
+        Schema::enableForeignKeyConstraints();
+
     }
 };

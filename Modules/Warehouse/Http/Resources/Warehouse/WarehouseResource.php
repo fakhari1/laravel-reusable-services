@@ -1,10 +1,12 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Resources\Warehouse;
+namespace Modules\Warehouse\Http\Resources\Warehouse;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Modules\Warehouse\Http\Resources\Rack\RackResource;
+use Modules\Shared\Helpers\DateTimeHelpers;
+use Modules\Warehouse\Http\Resources\Rack\RackResource;
+use Modules\Warehouse\Http\Resources\WarehouseProduct\WarehouseProductResource;
 
 class WarehouseResource extends JsonResource
 {
@@ -19,12 +21,20 @@ class WarehouseResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'type' => $this->type,
             'storekeeper_id' => $this->storekeeper_id,
+            'storekeeper' => [
+                'key' => $this->storekeeper_id,
+                'value' => $this->storekeeper_label
+            ],
             'address' => $this->when($this->address, fn() => $this->address->text),
             'account_id' => $this->account_id,
+            'account' => [
+                'id' => 1,
+                'code' => '1102',
+                'title' => 'حساب اصلی'
+            ],
             'description' => $this->description,
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'created_at' => DateTimeHelpers::gregorianDateTimeToJalali($this->created_at?->format('Y-m-d H:i:s')),
             'racks' => $this->when(
                 $this->racks,
                 fn() => RackResource::collection($this->racks)
@@ -33,6 +43,14 @@ class WarehouseResource extends JsonResource
                 $this->racks,
                 fn() => $this->racks->count()
             ),
+            'products' => $this->when(
+                $this->warehouseProducts,
+                fn() => WarehouseProductResource::collection($this->warehouseProducts)
+            ),
+            'products_count' => $this->when(
+                $this->warehouseProducts,
+                fn() => $this->warehouseProducts->count()
+            )
         ];
     }
 }

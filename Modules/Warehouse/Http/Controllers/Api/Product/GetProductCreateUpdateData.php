@@ -1,32 +1,28 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Product;
+namespace Modules\Warehouse\Http\Controllers\Api\Product;
 
 use Modules\Finance\Http\Resources\AccountingDetailedAccountResource;
-use Modules\Finance\Models\AccountingDetailedAccount;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\HttpRequestHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\ProductCategory\ProductCategoryResource;
-use Modules\Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
-use Modules\Modules\Warehouse\Models\Product;
-use Modules\Modules\Warehouse\Models\ProductCategory;
-use Modules\Modules\Warehouse\Models\Warehouse;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\HttpRequestHandler;
+use Modules\Shared\Services\Responder;
 use Modules\Warehouse\Http\Resources\Warehouse\WarehouseDocumentResource;
+use Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
+use Modules\Warehouse\Models\Product;
+use Modules\Warehouse\Models\ProductCategory;
+use Modules\Warehouse\Models\Warehouse;
 use OpenApi\Annotations as OA;
-use function Modules\Warehouse\Http\Controllers\Api\Product\app;
 
 /**
  * @OA\Get(
  *     path="/api/products/get-create-update-data",
  *     operationId="getProductCreateData",
- *     tags={"Products"},
+ *     tags={"Warehouse > Products"},
  *     summary="Get product create data",
  *     description="Returns product create data data",
  *     @OA\Response(
  *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(ref="#/components/schemas/Product")
+ *         description="Successful operation"
  *     ),
  *     @OA\Response(
  *         response=403,
@@ -42,21 +38,26 @@ class GetProductCreateUpdateData extends BaseCrudHandler
 {
     public function handle(array $attributes = [])
     {
-        $productCategories = ProductCategory::ForTenant($this->tenant->id)->where('parent_id', null)->get();
-        $productsRequestResponse = app(HttpRequestHandler::class)->get('https://dev.dasterang.ir/api/products/all');
+        $productCategories = ProductCategory::ForTenant($this->tenant->id)->select('id', 'name')->orderBy('parent_id')->get();
+        $products = app(HttpRequestHandler::class)->get('https://dev.dasterang.ir/api/products/all');
         $warehouses = Warehouse::ForTenant($this->tenant->id)->get();
 //        $accounts = AccountingDetailedAccount::ForTenant($this->tenant->id)->get();
-        $types = Product::getTranslatedTypes();
-        $statuses = Product::getTranslatedStatuses();
-
+        $code = Product::ForTenant($this->tenant?->id)->count() + 1;
         return Responder::success([
-            'product_categories' => ProductCategoryResource::collection($productCategories),
-            'products' => $productsRequestResponse['data']['products'],
+            'code' => $code,
+            'product_categories' => $productCategories,
+            'products' => is_array($products) && isset($products['data']['products']) ? $products['data']['products'] : [],
             'warehouses' => WarehouseResource::collection($warehouses),
 //            'accounts' => AccountingDetailedAccountResource::collection($accounts),
             'accounts' => [],
-            'types' => $types,
-            'statuses' => $statuses,
+            'types' => Product::getTranslatedTypes(),
+            'statuses' => Product::getTranslatedStatuses(),
+            'counting_units' => Product::getTranslatedCountingUnits()
         ]);
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

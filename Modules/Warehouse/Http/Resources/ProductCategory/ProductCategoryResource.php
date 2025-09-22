@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Resources\ProductCategory;
+namespace Modules\Warehouse\Http\Resources\ProductCategory;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Modules\Warehouse\Http\Resources\Product\ProductResource;
+use Modules\Warehouse\Http\Resources\Product\ProductResource;
 
 class ProductCategoryResource extends JsonResource
 {
@@ -23,7 +23,10 @@ class ProductCategoryResource extends JsonResource
             'status' => $this->status,
             'parent_id' => $this->parent_id,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'parent' => new ProductCategoryResource($this->whenLoaded('parent')),
+            'parent' => [
+                'id' => $this->parent_id ?? null,
+                'name' => $this->parent?->name ?? null,
+            ],
             'children' => $this->when(!empty($this->children), fn() => self::collection($this->children)),
             'products' => $this->when(!empty($this->products), fn() => ProductResource::collection($this->products)),
             'children_count' => $this->when(

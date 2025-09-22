@@ -1,11 +1,13 @@
 <?php
 
-namespace Modules\Modules\Shared\Http\Controllers;
+namespace Modules\Shared\Http\Controllers;
 
 trait AsStaticRunner
 {
     public static function run(array $attributes = [])
     {
-        return (new self())->execute($attributes);
+        request()->merge($attributes);
+
+        return (new self())->startup();
     }
 }

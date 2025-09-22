@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('warehouse_document_has_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('warehouse_document_id')->constrained('warehouse_documents');
-            $table->foreignId('rack_id')->constrained('racks');
+            $table->foreignId('rack_id')->constrained('warehouse_racks');
             $table->foreignId('product_id')->constrained('products');
             $table->string('unit');
-            $table->unsignedInteger('count');
+            $table->decimal('count', 12);
             $table->timestamps();
         });
     }
@@ -27,6 +27,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
+
         Schema::dropIfExists('warehouse_document_has_products');
+        Schema::enableForeignKeyConstraints();
+
     }
 };

@@ -1,20 +1,21 @@
 <?php
 
-namespace Modules\Modules\Warehouse\Http\Controllers\Api\Warehouse;
+namespace Modules\Warehouse\Http\Controllers\Api\Warehouse;
 
 use Illuminate\Validation\Rule;
-use Modules\Modules\Shared\Http\Controllers\BaseCrudHandler;
-use Modules\Modules\Shared\Services\Responder;
-use Modules\Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
-use Modules\Modules\Warehouse\Models\Warehouse;
+use Modules\Shared\Http\Controllers\BaseCrudHandler;
+use Modules\Shared\Services\Responder;
 use Modules\Warehouse\Http\Resources\Warehouse\WarehouseDocumentResource;
+use Modules\Warehouse\Http\Resources\Warehouse\WarehouseResource;
+use Modules\Warehouse\Models\Warehouse;
+use Modules\Warehouse\Models\WarehouseDocument;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Put(
  *     path="/api/warehouses/{id}/update",
  *     operationId="updateWarehouse",
- *     tags={"Warehouses"},
+ *     tags={"Warehouse > Warehouses"},
  *     summary="Update existing warehouse",
  *     description="Returns updated warehouse data",
  *     @OA\Parameter(
@@ -41,8 +42,7 @@ use OpenApi\Annotations as OA;
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(ref="#/components/schemas/Warehouse")
+ *         description="Successful operation"
  *     ),
  *     @OA\Response(
  *         response=403,
@@ -92,7 +92,7 @@ class UpdateWarehouse extends BaseCrudHandler
 
         return [
             'name' => ['required'],
-            'code' => ['required', 'string', 'max:255', Rule::unique('warehouses', 'code')->where(function ($query) use ($tenantId) {
+            'code' => ['required', Rule::unique('warehouses', 'code')->where(function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId);
             })->ignore($this->request->id)],
             'type' => ['nullable', 'string', 'max:255'],
@@ -103,7 +103,14 @@ class UpdateWarehouse extends BaseCrudHandler
 //            'city_id' => 'required|integer',
             'address' => ['nullable', 'string'],
             'account_id' => ['nullable', 'integer'],
-            'description' => ['nullable', 'string', 'max:1000']
+            'description' => ['nullable', 'string', 'max:1000'],
+            'racks' => ['nullable', 'array'],
+            'racks.*.name' => ['required']
         ];
+    }
+
+    public function authorize()
+    {
+        return true;
     }
 }

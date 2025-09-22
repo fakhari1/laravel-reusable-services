@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Modules\Shared\Services;
+namespace Modules\Shared\Services;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -8,30 +8,37 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
-use function Modules\Shared\Services\class_basename;
-use function Modules\Shared\Services\trans;
 
 /**
  *
  */
 class ExceptionHandler
 {
-    public function handle(\Exception $exception)
+    public function handle($exception)
     {
+
         return match (true) {
             $exception instanceof ValidationException => $this->handleValidationException($exception),
             $exception instanceof ModelNotFoundException => $this->handleModelNotFoundException($exception),
             $exception instanceof AuthenticationException => $this->handleAuthenticationException($exception),
+
+            // Authorization exceptions (most specific first)
             $exception instanceof AuthorizationException => $this->handleAuthorizationException($exception),
+            $exception instanceof AccessDeniedException => $this->handleAuthorizationException($exception),
+
+            // Database exceptions
             $exception instanceof QueryException => $this->handleQueryException($exception),
+
+            // HTTP exceptions (specific before generic)
             $exception instanceof NotFoundHttpException => $this->handleNotFoundHttpException($exception),
             $exception instanceof MethodNotAllowedHttpException => $this->handleMethodNotAllowedException($exception),
-            $exception instanceof HttpException => $this->handleHttpException($exception),
+            $exception instanceof HttpException => $this->handleHttpException($exception), // Generic HTTP - goes last
 
             default => $this->handleGenericException($exception),
         };
@@ -65,14 +72,14 @@ class ExceptionHandler
         return Responder::error('Authentication is required to access this resource', $exception->getMessage(), Response::HTTP_UNAUTHORIZED);
     }
 
-    private function handleAuthorizationException(AuthorizationException $exception)
+    private function handleAuthorizationException(AuthorizationException|AccessDeniedException $exception)
     {
         return Responder::error('You do not have permission to access this resource', $exception->getMessage(), Response::HTTP_FORBIDDEN);
     }
 
     private function handleQueryException(QueryException $exception)
     {
-        return Responder::error($exception->getTraceAsString(), $exception->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        return Responder::error($exception->getMessage(), $exception->getTrace(), Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 
     private function handleNotFoundHttpException(NotFoundHttpException $exception)
@@ -87,7 +94,7 @@ class ExceptionHandler
 
     private function handleHttpException(HttpException $exception)
     {
-        return Responder::error('An HTTP error occurred: ' . $exception->getMessage(), $exception->getTrace(), $exception->getStatusCode());
+        return Responder::error($exception->getMessage(), $exception->getTrace(), $exception->getStatusCode());
     }
 
 
