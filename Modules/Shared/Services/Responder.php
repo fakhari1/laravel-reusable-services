@@ -34,47 +34,4 @@ class Responder
             'errors' => $errors,
         ], $statusCode);
     }
-
-    public static function validationError(
-        $errors,
-        string $message = 'Validation failed'
-    ): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-            'errors' => $errors
-        ], Response::HTTP_UNPROCESSABLE_ENTITY);
-    }
-
-    public static function unauthorizedError(
-        string $message = 'Unauthorized'
-    ): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-        ], Response::HTTP_UNAUTHORIZED);
-    }
-
-    public static function forbiddenError(
-        string $message = 'Forbidden'
-    ): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-        ], Response::HTTP_FORBIDDEN);
-    }
-
-    public static function notFound(
-        string $message = 'Resource not found'
-    ): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-            'errors' => null
-        ], Response::HTTP_NOT_FOUND);
-    }
 }
