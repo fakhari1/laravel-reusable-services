@@ -7,6 +7,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\Finance\Http\Resources\DetailedAccount\DetailedAccountResource;
 use Modules\Finance\Models\Account\AccountingDetailedAccount;
 use Modules\Finance\Models\Account\AccountingSpecificAccount;
+use Modules\Shared\Http\Controllers\AsStaticRunner;
 use Modules\Shared\Http\Controllers\BaseCrudHandler;
 use Modules\Shared\Services\Responder;
 use OpenApi\Annotations as OA;
@@ -93,6 +94,7 @@ use OpenApi\Annotations as OA;
  */
 class StoreDetailedAccount extends BaseCrudHandler
 {
+    use AsStaticRunner;
     public function execute(array $attributes = [])
     {
         if (!is_null($attributes['parent_id'])) {

@@ -58,7 +58,7 @@ class GetSaleInvoiceCreateUpdateData extends BaseCrudHandler
 
         $customersDetailedAccounts = $customersSpecificAccount->detailedAccounts()->whereDoesntHave('children');
 
-        $products = Product::ForTenant($this->tenant->id)->latest();
+        $products = Product::ForTenant($this->tenant->id)->with('warehouseProducts.warehouse', 'warehouseProducts.rack')->latest();
         $services = TenantProvidedService::ForTenant($this->tenant->id)->latest();
 
         if ($this->request->has('customer_account')) {
@@ -92,7 +92,6 @@ class GetSaleInvoiceCreateUpdateData extends BaseCrudHandler
         $invoiceItemable = $products->merge($services);
 
         $customersDetailedAccounts = $customersDetailedAccounts->limit(20)->get();
-
 
         return Responder::success([
             'code' => $code,

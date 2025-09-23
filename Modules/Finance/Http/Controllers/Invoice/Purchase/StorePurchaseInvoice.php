@@ -1,12 +1,13 @@
 <?php
 
-namespace Modules\Finance\Http\Controllers\Invoice\Sale;
+namespace Modules\Finance\Http\Controllers\Invoice\Purchase;
 
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Modules\Finance\Helpers\FinanceHelpers;
 use Modules\Finance\Http\Controllers\Document\StoreAccountingDocument;
 use Modules\Finance\Http\Controllers\Invoice\Invoice\StoreInvoice;
+use Modules\Finance\Http\Controllers\Invoice\Sale\InvoiceResource;
 use Modules\Finance\Models\Account\AccountingDetailedAccount;
 use Modules\Finance\Models\Document\AccountingDocument;
 use Modules\Finance\Models\FiscalYear\AccountingFiscalYear;
@@ -57,12 +58,11 @@ use OpenApi\Annotations as OA;
  *     )
  * )
  */
-class StoreSaleInvoice extends BaseCrudHandler
+class StorePurchaseInvoice extends BaseCrudHandler
 {
     public function execute(array $attributes = [])
     {
         $attributes['date'] = GlobalHelpers::farsiToEnglishNumbers($attributes['date']);
-        dd($attributes);
         $fiscalYear = AccountingFiscalYear::ForTenant($this->tenant?->id)->where('status', AccountingFiscalYear::STATUS_ACTIVE)->first();
         $customerDetailedAccount = AccountingDetailedAccount::ForTenant($this->tenant->id)->where('id', $attributes['customer_account_id'])->first();
         $saleDetailedAccount = AccountingDetailedAccount::ForTenant($this->tenant->id)->where('slug', AccountingDetailedAccount::SLUG_SALE)->first();
@@ -150,12 +150,6 @@ class StoreSaleInvoice extends BaseCrudHandler
             'invoice_items.*.unit' => ['required'],
             'invoice_items.*.unit_price' => ['required', 'numeric', 'min:1'],
             'invoice_items.*.count' => ['required', 'numeric', 'min:1'],
-            'invoice_items.*.warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where(function ($query) {
-                $query->where('tenant_id', $this->tenant->id);
-            })],
-            'invoice_items.*.rack_id' => ['nullable', Rule::exists('warehouse_racks', 'id')->where(function ($query) {
-                $query->where('tenant_id', $this->tenant->id);
-            })],
         ];
     }
 
